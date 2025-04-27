@@ -195,7 +195,7 @@ st.divider()
 st.subheader("🧑‍💼📈معدل الإحتفاظ الموظفين")
 st.markdown(
     """
-ذا مؤشر السلوك الرئيسي (KBI) يقيس معدل الاحتفاظ بالموظفين، وهو النسبة المئوية للموظفين الذين استمروا في العمل بالشركة في نهاية فترة معينة مقارنةً بعدد الموظفين في بداية تلك الفترة. يعكس هذا المؤشر فعالية استراتيجيات الاحتفاظ بالموظفين وبيئة العمل بشكل عام التي تؤثر على استقرار الموظفين.
+هذا المؤشر (KBI) يقيس معدل الاحتفاظ بالموظفين، وهو النسبة المئوية للموظفين الذين استمروا في العمل بالشركة في نهاية فترة معينة مقارنةً بعدد الموظفين في بداية تلك الفترة. يعكس هذا المؤشر فعالية استراتيجيات الاحتفاظ بالموظفين وبيئة العمل بشكل عام التي تؤثر على استقرار الموظفين.
 """
 )
 
@@ -329,9 +329,8 @@ st.divider()
 st.subheader("🔄️🧑🏻‍💼معدل مشاركة الموظفين")
 st.markdown(
     """
-هذا مؤشر السلوك الرئيسي (KBI) يقيس معدل التفاعل الوظيفي للموظفين، والذي يتم تحديده من خلال نتائج استبيان تكامل الموظفين الذي يتم إجراؤه خلال فترة معينة. يعكس هذا المؤشر مستوى مشاركة الموظفين ورضاهم وارتباطهم العاطفي بالمؤسسة.    """
+هذا المؤشر (KBI) يقيس معدل التفاعل الوظيفي للموظفين، والذي يتم تحديده من خلال نتائج استبيان تكامل الموظفين الذي يتم إجراؤه خلال فترة معينة. يعكس هذا المؤشر مستوى مشاركة الموظفين ورضاهم وارتباطهم العاطفي بالمؤسسة.    """
 )
-
 
 col1, col2 = st.columns(2)
 with col1:
@@ -356,7 +355,7 @@ try:
             df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
             df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
 
-            # إضافة النتيجة مع نسبة مئوية (إذا كان ذلك مناسبًا)
+            # إضافة النتيجة مع نسبة مئوية
             df["النتيجة"] = df["employee_integration_survey"].apply(lambda x: f"{x}%" if pd.notna(x) else "0%")
 
             # إضافة حالة بناءً على القيمة
@@ -364,14 +363,14 @@ try:
                 lambda x: "معدل طبيعي" if pd.notna(x) and x >= 75 else "تحت الطبيعي"
             )
 
-            # إضافة فحص للتأكد من أن القيمة موجودة وتحويل أي قيم غير صالحة إلى NaN
+            # تحويل القيم لرقمية مع التعامل مع الأخطاء
             df["employee_integration_survey"] = df["employee_integration_survey"].apply(pd.to_numeric, errors='coerce')
 
-            # إضافة عمود اللون بناءً على القيمة
-            df["color"] = df["employee_integration_survey"].apply(lambda x: 'blue' if pd.notna(x) and x >= 75 else 'red')
+            # إعادة ترتيب الأعمدة وإزالة عمود اللون
+            df = df.rename(columns={"from": "التاريخ", "to": "إلى", "employee_integration_survey": "معدل التفاعل الوظيفي"})
 
-            # إعادة ترتيب الأعمدة
-            df = df.rename(columns={"from": "من", "to": "إلى", "employee_integration_survey": "معدل التفاعل الوظيفي"})
+            # إزالة عمود اللون
+            df = df.drop(columns=["لون"], errors='ignore')
 
             # إعادة تعيين الفهرس ليبدأ من 1
             df.index = df.index + 1
@@ -391,24 +390,28 @@ try:
                 key="chart_types_engagement"
             )
 
-            # البيانات التي تظهر عند التمرير فوق العناصر
+            # بيانات إضافية للـ hover
             hover_data = {
-                "من": True,
+                "التاريخ": True,  # تغيير "من" إلى "التاريخ"
                 "إلى": True,
                 "معدل التفاعل الوظيفي": True,
                 "النتيجة": True,
-                "الحالة": False  # الحالة لا تحتاج لإظهارها في hover_data
+                "الحالة": True
             }
 
-            # إضافة الرسوم البيانية بناءً على الاختيارات
+            # عرض الرسوم بناءً على الاختيارات
             if "📊 Bar Chart" in chart_types:
                 st.write("### 📊 Bar Chart")
                 fig = px.bar(
                     df,
-                    x="من",  # تغيير إلى "من"
-                    y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل التفاعل الوظيفي",
+                    color="الحالة",  # نلون بناءً على "الحالة"
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
                     hover_data=hover_data,
-                    color=df["color"],  # استخدام العمود الجديد للون
                     title="Bar Chart"
                 )
                 st.plotly_chart(fig)
@@ -417,11 +420,15 @@ try:
                 st.write("### 📈 Line Chart")
                 fig = px.line(
                     df,
-                    x="من",  # تغيير إلى "من"
-                    y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل التفاعل الوظيفي",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
                     hover_data=hover_data,
                     markers=True,
-                    color=df["color"],  # استخدام العمود الجديد للون
                     title="Line Chart"
                 )
                 st.plotly_chart(fig)
@@ -430,10 +437,14 @@ try:
                 st.write("### 💥 Scatter Chart")
                 fig = px.scatter(
                     df,
-                    x="من",  # تغيير إلى "من"
-                    y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل التفاعل الوظيفي",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
                     hover_data=hover_data,
-                    color=df["color"],  # استخدام العمود الجديد للون
                     title="Scatter Chart"
                 )
                 st.plotly_chart(fig)
@@ -446,116 +457,6 @@ try:
 except Exception as e:
     st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
 
-# col1, col2 = st.columns(2)
-# with col1:
-#     start_date = st.date_input("تاريخ البداية", value=datetime(current_year, 1, 1), key="start_date_engagement")
-# with col2:
-#     end_date = st.date_input("تاريخ النهاية", value=datetime(current_year, 12, 31), key="end_date_engagement")
-
-# # رابط الـ API الخاص بمعدل التفاعل الوظيفي
-# employee_engagement_api_url = f"http://localhost:5000/api/employee_engagement_rate/average_by_date/?start_date={start_date}&end_date={end_date}"
-
-# try:
-#     # طلب البيانات من الـ API
-#     response = requests.get(employee_engagement_api_url)
-
-#     if response.status_code == 200:
-#         data = response.json()
-
-#         if data:
-#             df = pd.DataFrame(data)
-
-#             # تحويل تواريخ البداية والنهاية إلى التنسيق المناسب
-#             df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
-#             df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
-
-#             # إضافة النتيجة مع نسبة مئوية (إذا كان ذلك مناسبًا)
-#             df["النتيجة"] = df["employee_integration_survey"].apply(lambda x: f"{x}%" if pd.notna(x) else "0%")
-
-#             # إضافة حالة بناءً على القيمة
-#             df["الحالة"] = df["employee_integration_survey"].apply(
-#                 lambda x: "معدل طبيعي" if x >= 75 else "تحت الطبيعي"
-#             )
-
-#             # إعادة ترتيب الأعمدة
-#             df = df.rename(columns={"from": "من", "to": "إلى", "employee_integration_survey": "معدل التفاعل الوظيفي"})
-
-#             # إعادة تعيين الفهرس ليبدأ من 1
-#             df.index = df.index + 1
-
-#             # عرض البيانات في جدول
-#             st.write("### البيانات المحدثة:")
-#             st.dataframe(df)
-
-#             st.divider()
-#             st.subheader("📊 اختر نوع الرسوم البيانية لعرض البيانات:")
-
-#             # إضافة مفتاح فريد للـ multiselect
-#             chart_types = st.multiselect(
-#                 "أنواع الرسوم:",
-#                 ["📊 Bar Chart", "📈 Line Chart", "💥 Scatter Chart"],
-#                 default=["📊 Bar Chart"],
-#                 key="chart_types_engagement"
-#             )
-
-#             # البيانات التي تظهر عند التمرير فوق العناصر
-#             hover_data = {
-#                 "من": True,
-#                 "إلى": True,
-#                 "معدل التفاعل الوظيفي": True,
-#                 "النتيجة": True,
-#                 "الحالة": False  # الحالة لا تحتاج لإظهارها في hover_data
-#             }
-
-#             # إضافة الرسوم البيانية بناءً على الاختيارات
-#             if "📊 Bar Chart" in chart_types:
-#                 st.write("### 📊 Bar Chart")
-#                 fig = px.bar(
-#                     df,
-#                     x="من",  # تغيير إلى "من"
-#                     y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
-#                     hover_data=hover_data,
-#                     color_discrete_map={"معدل طبيعي": "blue", "تحت الطبيعي": "red"},
-
-#                     title="Bar Chart"
-#                 )
-#                 st.plotly_chart(fig)
-
-#             if "📈 Line Chart" in chart_types:
-#                 st.write("### 📈 Line Chart")
-#                 fig = px.line(
-#                     df,
-#                     x="من",  # تغيير إلى "من"
-#                     y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
-#                     hover_data=hover_data,
-#                     markers=True,
-#                     color_discrete_map={"معدل طبيعي": "blue", "تحت الطبيعي": "red"},
-
-#                     title="Line Chart"
-#                 )
-#                 st.plotly_chart(fig)
-
-#             if "💥 Scatter Chart" in chart_types:
-#                 st.write("### 💥 Scatter Chart")
-#                 fig = px.scatter(
-#                     df,
-#                     x="من",  # تغيير إلى "من"
-#                     y="معدل التفاعل الوظيفي",  # تغيير إلى "معدل التفاعل الوظيفي"
-#                     hover_data=hover_data,
-#                     color_discrete_map={"معدل طبيعي": "blue", "تحت الطبيعي": "red"},
-
-#                     title="Scatter Chart"
-#                 )
-#                 st.plotly_chart(fig)
-
-#         else:
-#             st.warning("❗ لا توجد بيانات في الفترة المحددة.")
-#     else:
-#         st.error(f"خطأ في الاتصال بالسيرفر: {response.status_code}")
-
-# except Exception as e:
-#     st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
-
 
 st.divider()
 
@@ -563,41 +464,150 @@ st.divider()
 
 
 # ──────────────────────────────
-# 🏢   	Employee Engagement Rate
+# 🏢   Vacant Positions Filling Period 
 # ──────────────────────────────
-st.subheader("🧑‍💼💬Employee Engagement Rate")
+st.subheader("🧑‍💼💬 فترة ملئ المناصب الشاغرة ")
 st.markdown(
     """
-This Key Behavioral Indicator (KBI) measures the employee engagement rate, which is determined by the results of the employee integration survey conducted during a specific period. It reflects the level of employee involvement, satisfaction, and their emotional commitment to the organization.     """
+هذا المؤشر (KBI) يقيس الوقت المتوسط اللازم لملء الوظائف الشاغرة في الشركة، ويتم التعبير عنه بالأيام العملية. يتم حسابه عن طريق قسمة إجمالي عدد الأيام العملية لملء الوظائف الشاغرة على عدد الوظائف التي تم شغلها خلال فترة معينة. يعكس هذا المؤشر كفاءة عملية التوظيف من حيث الوقت المستغرق لملء المناصب الشاغرة.
+"""
 )
 
-x = [1, 2, 3, 4]
-y = [10, 20, 30, 40]
+col1, col2 = st.columns(2)
+with col1:
+    start_date_vacant = st.date_input(
+        "تاريخ البداية - فترة شغور الوظائف", 
+        value=datetime(current_year, 1, 1), 
+        key="start_date_vacant"
+    )
+with col2:
+    end_date_vacant = st.date_input(
+        "تاريخ النهاية - فترة شغور الوظائف", 
+        value=datetime(current_year, 12, 31), 
+        key="end_date_vacant"
+    )
 
-st.bar_chart({"X": x, "Y": y})
+# رابط الـ API
+vacant_positions_api_url = f"http://localhost:5000/api/vacant_positions_filling_period/average_by_date/?start_date={start_date_vacant}&end_date={end_date_vacant}"
 
+try:
+    response = requests.get(vacant_positions_api_url)
 
+    if response.status_code == 200:
+        data = response.json()
+
+        if data:
+            df = pd.DataFrame(data)
+
+            df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
+            df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
+
+            # تحديث العمود ليظهر "النتيجة (أيام)"
+            df["النتيجة (أيام)"] = df["calculated_value"].apply(lambda x: f"{x}" if pd.notna(x) else "0")
+
+            # إضافة "الحالة" بناءً على القيمة
+            df["الحالة"] = df["calculated_value"].apply(
+                lambda x: "معدل طبيعي" if pd.notna(x) and x <= 10 else "تحت الطبيعي"
+            )
+
+            df["calculated_value"] = df["calculated_value"].apply(pd.to_numeric, errors='coerce')
+
+            # إعادة تسمية الأعمدة بما يتناسب مع التعديلات المطلوبة
+            df = df.rename(columns={
+                "from": "التاريخ",  # تغيير "من" إلى "التاريخ"
+                "to": "إلى",
+                "total_number_of_working_days_to_fill_vacancies": "إجمالي أيام العمل لملء الشواغر",
+                "number_of_jobs_filled": "عدد الوظائف المشغولة",
+                "calculated_value": "متوسط مدة الشغور (أيام)"
+            })
+
+            # إزالة عمود اللون من الجدول
+            df = df.drop(columns=["لون"], errors='ignore')
+
+            df.index = df.index + 1
+
+            st.write("### البيانات المحدثة لفترة شغور الوظائف:")
+            st.dataframe(df)
+
+            st.divider()
+            st.subheader("📊 اختر نوع الرسوم البيانية لعرض البيانات:")
+
+            chart_types_vacant = st.multiselect(
+                "أنواع الرسوم (فترة شغور الوظائف):",
+                ["📊 Bar Chart", "📈 Line Chart", "💥 Scatter Chart"],
+                default=["📊 Bar Chart"],
+                key="chart_types_vacant"
+            )
+
+            hover_data_vacant = {
+                "التاريخ": True,  # تغيير "من" إلى "التاريخ"
+                "إلى": True,
+                "إجمالي أيام العمل لملء الشواغر": True,
+                "عدد الوظائف المشغولة": True,
+                "متوسط مدة الشغور (أيام)": True,
+                "النتيجة (أيام)": True,  # تحديث "النتيجة" لتكون "النتيجة (أيام)"
+                "الحالة": True
+            }
+
+            # تعريف خريطة الألوان بناءً على الحالة
+            color_discrete_map = {
+                "معدل طبيعي": "blue",
+                "تحت الطبيعي": "red"
+            }
+
+            # عرض الرسوم البيانية بناءً على الاختيارات
+            if "📊 Bar Chart" in chart_types_vacant:
+                st.write("### 📊 Bar Chart")
+                fig = px.bar(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="متوسط مدة الشغور (أيام)",
+                    color="الحالة",  # اللون بناءً على "الحالة"
+                    color_discrete_map=color_discrete_map,
+                    hover_data=hover_data_vacant,
+                    title="Bar Chart - متوسط مدة شغور الوظائف"
+                )
+                st.plotly_chart(fig)
+
+            if "📈 Line Chart" in chart_types_vacant:
+                st.write("### 📈 Line Chart")
+                fig = px.line(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="متوسط مدة الشغور (أيام)",
+                    color="الحالة",
+                    color_discrete_map=color_discrete_map,
+                    hover_data=hover_data_vacant,
+                    markers=True,
+                    title="Line Chart - متوسط مدة شغور الوظائف"
+                )
+                st.plotly_chart(fig)
+
+            if "💥 Scatter Chart" in chart_types_vacant:
+                st.write("### 💥 Scatter Chart")
+                fig = px.scatter(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="متوسط مدة الشغور (أيام)",
+                    color="الحالة",
+                    color_discrete_map=color_discrete_map,
+                    hover_data=hover_data_vacant,
+                    title="Scatter Chart - متوسط مدة شغور الوظائف"
+                )
+                st.plotly_chart(fig)
+
+        else:
+            st.warning("❗ لا توجد بيانات في الفترة المحددة.")
+    else:
+        st.error(f"خطأ في الاتصال بالسيرفر: {response.status_code}")
+
+except Exception as e:
+    st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
+    
 st.divider()
 
 
 
-
-# ──────────────────────────────
-# 🏢  Vacant Positions Filling Period
-# ──────────────────────────────
-st.subheader("🕒📋Vacant Positions Filling Period")
-st.markdown(
-    """
-This Key Behavioral Indicator (KBI) measures the average time taken to fill vacant positions in the company, expressed in working days. It is calculated by dividing the total number of working days to fill vacancies by the number of jobs filled during a specific period. It reflects the efficiency of the recruitment process in terms of time taken to fill open positions.     """
-)
-
-x = [1, 2, 3, 4]
-y = [10, 20, 30, 40]
-
-st.bar_chart({"X": x, "Y": y})
-
-
-st.divider()
 
 
 
@@ -605,17 +615,140 @@ st.divider()
 # ──────────────────────────────
 # 🏢 Recruitment Failure Rate
 # ──────────────────────────────
-st.subheader("❌📉Recruitment Failure Rate")
+st.subheader("❌📉معدل فشل التوظيف")
 st.markdown(
     """
-This Key Behavioral Indicator (KBI) measures the recruitment failure rate, which is the percentage of new employees who failed (did not meet performance expectations or left the company) compared to the total number of new employees hired during a specific period. It helps.    """
+هذا المؤشر (KBI) يقيس معدل فشل التوظيف، وهو النسبة المئوية للموظفين الجدد الذين فشلوا (لم يلبوا توقعات الأداء أو غادروا الشركة) مقارنةً بإجمالي عدد الموظفين الجدد الذين تم تعيينهم خلال فترة معينة. يساعد هذا المؤشر في تقييم فعالية عملية التوظيف والتوجيه.
+"""
 )
 
-x = [1, 2, 3, 4]
-y = [10, 20, 30, 40]
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("تاريخ البداية", value=datetime(current_year, 1, 1), key="start_date_recruitment_failure")
+with col2:
+    end_date = st.date_input("تاريخ النهاية", value=datetime(current_year, 12, 31), key="end_date_recruitment_failure")
 
-st.bar_chart({"X": x, "Y": y})
+# رابط الـ API الخاص بمعدل فشل التوظيف
+recruitment_failure_api_url = f"http://localhost:5000/api/recruitment_failure_rate/average_by_date/?start_date={start_date}&end_date={end_date}"
 
+try:
+    # طلب البيانات من الـ API
+    response = requests.get(recruitment_failure_api_url)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        if data:
+            df = pd.DataFrame(data)
+
+            # تحويل تواريخ البداية والنهاية إلى التنسيق المناسب
+            df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
+            df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
+
+            # إضافة النتيجة مع نسبة مئوية
+            df["النتيجة"] = df["calculated_value"].apply(lambda x: f"{x}%" if pd.notna(x) else "0%")
+
+            # إضافة حالة بناءً على القيمة
+            df["الحالة"] = df["calculated_value"].apply(
+                lambda x: "معدل طبيعي" if pd.notna(x) and x < 10 else "تحت الطبيعي"
+            )
+
+            # تحويل القيم لرقمية مع التعامل مع الأخطاء
+            df["calculated_value"] = df["calculated_value"].apply(pd.to_numeric, errors='coerce')
+
+            # إعادة ترتيب الأعمدة وإزالة عمود اللون
+            df = df.rename(columns={
+                "from": "التاريخ",
+                "to": "إلى",
+                "number_of_new_employees_who_failed": "عدد الموظفين الجدد الذين فشلوا",
+                "total_number_of_new_employees": "إجمالي عدد الموظفين الجدد",
+                "calculated_value": "معدل فشل التوظيف"
+            })
+
+            # إعادة تعيين الفهرس ليبدأ من 1
+            df.index = df.index + 1
+
+            # عرض البيانات في جدول
+            st.write("### البيانات المحدثة: ")
+            st.dataframe(df)
+
+            st.divider()
+            st.subheader("📊 اختر نوع الرسوم البيانية لعرض البيانات:")
+
+            # إضافة مفتاح فريد للـ multiselect
+            chart_types = st.multiselect(
+                "أنواع الرسوم:",
+                ["📊 Bar Chart", "📈 Line Chart", "💥 Scatter Chart"],
+                default=["📊 Bar Chart"],
+                key="chart_types_recruitment_failure"
+            )
+
+            # بيانات إضافية للـ hover
+            hover_data = {
+                "التاريخ": True,  # تغيير "من" إلى "التاريخ"
+                "إلى": True,
+                "معدل فشل التوظيف": True,
+                "النتيجة": True,
+                "الحالة": True
+            }
+
+            # عرض الرسوم بناءً على الاختيارات
+            if "📊 Bar Chart" in chart_types:
+                st.write("### 📊 Bar Chart")
+                fig = px.bar(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل فشل التوظيف",
+                    color="الحالة",  # نلون بناءً على "الحالة"
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Bar Chart - معدل فشل التوظيف"
+                )
+                st.plotly_chart(fig)
+
+            if "📈 Line Chart" in chart_types:
+                st.write("### 📈 Line Chart")
+                fig = px.line(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل فشل التوظيف",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    markers=True,
+                    title="Line Chart - معدل فشل التوظيف"
+                )
+                st.plotly_chart(fig)
+
+            if "💥 Scatter Chart" in chart_types:
+                st.write("### 💥 Scatter Chart")
+                fig = px.scatter(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل فشل التوظيف",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Scatter Chart - معدل فشل التوظيف"
+                )
+                st.plotly_chart(fig)
+
+        else:
+            st.warning("❗ لا توجد بيانات في الفترة المحددة.")
+    else:
+        st.error(f"خطأ في الاتصال بالسيرفر: {response.status_code}")
+
+except Exception as e:
+    st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
 
 st.divider()
 
@@ -629,7 +762,7 @@ st.divider()
 st.subheader("🚶‍♂️📉معدل غياب الموظفين")
 st.markdown(
     """
-هذا مؤشر السلوك الرئيسي (KBI) يقيس معدل غياب الموظفين، ويتم حسابه كنسبة مئوية لإجمالي أيام غياب الموظفين في شهر معين مقارنةً بإجمالي أيام العمل لجميع الموظفين خلال نفس الشهر. يساعد هذا المؤشر في تقييم مستوى التفاعل الوظيفي للموظفين، رفاهيتهم، واتجاهات الحضور."""
+هذا المؤشر  (KBI) يقيس معدل غياب الموظفين، ويتم حسابه كنسبة مئوية لإجمالي أيام غياب الموظفين في شهر معين مقارنةً بإجمالي أيام العمل لجميع الموظفين خلال نفس الشهر. يساعد هذا المؤشر في تقييم مستوى التفاعل الوظيفي للموظفين، رفاهيتهم، واتجاهات الحضور."""
 )
 
 col1, col2 = st.columns(2)
@@ -758,17 +891,140 @@ st.divider()
 # ──────────────────────────────
 # 🏢  Rate Of Completion Of Training Programs
 # ──────────────────────────────
-st.subheader("🎓✅Rate Of Completion Of Training Programs")
+st.subheader("🎓✅معدل إكمال برامج التدريب")
 st.markdown(
     """
-This Key Behavioral Indicator (KBI) measures the rate of completion of training programs, calculated as the percentage of employees who have completed a training program compared to the total number of employees targeted for training during a specific period. It helps to assess the effectiveness and engagement of employees in training initiatives.    """
+هذا المؤشر (KBI) يقيس معدل إتمام برامج التدريب، ويتم حسابه كنسبة مئوية للموظفين الذين أكملوا برنامج التدريب مقارنةً بإجمالي عدد الموظفين المستهدفين للتدريب خلال فترة معينة. يساعد هذا المؤشر في تقييم فعالية برامج التدريب ودرجة مشاركة الموظفين فيها.
+"""
 )
 
-x = [1, 2, 3, 4]
-y = [10, 20, 30, 40]
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("تاريخ البداية", value=datetime(current_year, 1, 1), key="start_date_training")
+with col2:
+    end_date = st.date_input("تاريخ النهاية", value=datetime(current_year, 12, 31), key="end_date_training")
 
-st.bar_chart({"X": x, "Y": y})
+# رابط الـ API الخاص بمعدل إتمام برامج التدريب
+training_completion_api_url = f"http://localhost:5000/api/rate_of_completion_of_training_programs/average_by_date/?start_date={start_date}&end_date={end_date}"
 
+try:
+    # طلب البيانات من الـ API
+    response = requests.get(training_completion_api_url)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        if data:
+            df = pd.DataFrame(data)
+
+            # تحويل تواريخ البداية والنهاية إلى التنسيق المناسب
+            df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
+            df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
+
+            # إضافة النتيجة مع نسبة مئوية
+            df["النتيجة"] = df["calculated_value"].apply(lambda x: f"{x}%" if pd.notna(x) else "0%")
+
+            # إضافة حالة بناءً على القيمة
+            df["الحالة"] = df["calculated_value"].apply(
+                lambda x: "معدل طبيعي" if pd.notna(x) and x >= 75 else "تحت الطبيعي"
+            )
+
+            # تحويل القيم لرقمية مع التعامل مع الأخطاء
+            df["calculated_value"] = df["calculated_value"].apply(pd.to_numeric, errors='coerce')
+
+            # إعادة ترتيب الأعمدة وإزالة عمود اللون
+            df = df.rename(columns={
+                "from": "التاريخ",
+                "to": "إلى",
+                "number_of_employees_who_completed_training_programs": "عدد الموظفين الذين أكملوا التدريب",
+                "total_number_of_employees_targeted_for_training": "إجمالي الموظفين المستهدفين للتدريب",
+                "calculated_value": "معدل إتمام التدريب"
+            })
+
+            # إعادة تعيين الفهرس ليبدأ من 1
+            df.index = df.index + 1
+
+            # عرض البيانات في جدول
+            st.write("### البيانات المحدثة: ")
+            st.dataframe(df)
+
+            st.divider()
+            st.subheader("📊 اختر نوع الرسوم البيانية لعرض البيانات:")
+
+            # إضافة مفتاح فريد للـ multiselect
+            chart_types = st.multiselect(
+                "أنواع الرسوم:",
+                ["📊 Bar Chart", "📈 Line Chart", "💥 Scatter Chart"],
+                default=["📊 Bar Chart"],
+                key="chart_types_training_completion"
+            )
+
+            # بيانات إضافية للـ hover
+            hover_data = {
+                "التاريخ": True,  # تغيير "من" إلى "التاريخ"
+                "إلى": True,
+                "معدل إتمام التدريب": True,
+                "النتيجة": True,
+                "الحالة": True
+            }
+
+            # عرض الرسوم بناءً على الاختيارات
+            if "📊 Bar Chart" in chart_types:
+                st.write("### 📊 Bar Chart")
+                fig = px.bar(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل إتمام التدريب",
+                    color="الحالة",  # نلون بناءً على "الحالة"
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Bar Chart - معدل إتمام التدريب"
+                )
+                st.plotly_chart(fig)
+
+            if "📈 Line Chart" in chart_types:
+                st.write("### 📈 Line Chart")
+                fig = px.line(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل إتمام التدريب",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    markers=True,
+                    title="Line Chart - معدل إتمام التدريب"
+                )
+                st.plotly_chart(fig)
+
+            if "💥 Scatter Chart" in chart_types:
+                st.write("### 💥 Scatter Chart")
+                fig = px.scatter(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل إتمام التدريب",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Scatter Chart - معدل إتمام التدريب"
+                )
+                st.plotly_chart(fig)
+
+        else:
+            st.warning("❗ لا توجد بيانات في الفترة المحددة.")
+    else:
+        st.error(f"خطأ في الاتصال بالسيرفر: {response.status_code}")
+
+except Exception as e:
+    st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
 
 st.divider()
 
@@ -778,16 +1034,139 @@ st.divider()
 # ──────────────────────────────
 # 🏢  Employee Satisfaction Rate"
 # ──────────────────────────────
-st.subheader("😊📊Employee Satisfaction Rate")
+st.subheader("😊📊معدل رضا الموظفين")
 st.markdown(
     """
-This Key Behavioral Indicator (KBI) measures the employee satisfaction rate based on the scores from an employee satisfaction survey conducted during a specific period. It reflects the overall satisfaction and engagement of employees with their work environment, management, and the organization.    """
+هذا المؤشر (KBI) يقيس معدل رضا الموظفين استنادًا إلى الدرجات التي تم الحصول عليها من استبيان رضا الموظفين الذي يتم إجراؤه خلال فترة معينة. يعكس هذا المؤشر مستوى رضا الموظفين العام ودرجة تفاعلهم مع بيئة العمل والإدارة والمنظمة.
+"""
 )
 
-x = [1, 2, 3, 4]
-y = [10, 20, 30, 40]
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("تاريخ البداية", value=datetime(current_year, 1, 1), key="start_date_satisfaction")
+with col2:
+    end_date = st.date_input("تاريخ النهاية", value=datetime(current_year, 12, 31), key="end_date_satisfaction")
 
-st.bar_chart({"X": x, "Y": y})
+# رابط الـ API الخاص بمعدل رضا الموظفين
+employee_satisfaction_api_url = f"http://localhost:5000/api/employee_satisfaction_rate/average_by_date/?start_date={start_date}&end_date={end_date}"
+
+try:
+    # طلب البيانات من الـ API
+    response = requests.get(employee_satisfaction_api_url)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        if data:
+            # تحويل البيانات إلى DataFrame
+            df = pd.DataFrame(data)
+
+            # تحويل تواريخ البداية والنهاية إلى التنسيق المناسب
+            df["from"] = pd.to_datetime(df["from"]).dt.strftime('%Y-%m-%d')
+            df["to"] = pd.to_datetime(df["to"]).dt.strftime('%Y-%m-%d')
+
+            # إضافة النتيجة مع نسبة مئوية
+            df["النتيجة"] = df["employee_satisfaction_survey_score"].apply(lambda x: f"{x}%" if pd.notna(x) else "0%")
+
+            # إضافة حالة بناءً على القيمة
+            df["الحالة"] = df["employee_satisfaction_survey_score"].apply(
+                lambda x: "معدل طبيعي" if pd.notna(x) and x >= 80 else "تحت الطبيعي"
+            )
+
+            # تحويل القيم لرقمية مع التعامل مع الأخطاء
+            df["employee_satisfaction_survey_score"] = df["employee_satisfaction_survey_score"].apply(pd.to_numeric, errors='coerce')
+
+            # إعادة ترتيب الأعمدة
+            df = df.rename(columns={
+                "from": "التاريخ",
+                "to": "إلى",
+                "employee_satisfaction_survey_score": "معدل رضا الموظفين"
+            })
+
+            # إعادة تعيين الفهرس ليبدأ من 1
+            df.index = df.index + 1
+
+            # عرض البيانات في جدول
+            st.write("### البيانات المحدثة:")
+            st.dataframe(df)
+
+            st.divider()
+            st.subheader("📊 اختر نوع الرسوم البيانية لعرض البيانات:")
+
+            # إضافة مفتاح فريد للـ multiselect
+            chart_types = st.multiselect(
+                "أنواع الرسوم:",
+                ["📊 Bar Chart", "📈 Line Chart", "💥 Scatter Chart"],
+                default=["📊 Bar Chart"],
+                key="chart_types_satisfaction"
+            )
+
+            # بيانات إضافية للـ hover
+            hover_data = {
+                "التاريخ": True,  # تغيير "من" إلى "التاريخ"
+                "إلى": True,
+                "معدل رضا الموظفين": True,
+                "النتيجة": True,
+                "الحالة": True
+            }
+
+            # عرض الرسوم بناءً على الاختيارات
+            if "📊 Bar Chart" in chart_types:
+                st.write("### 📊 Bar Chart")
+                fig = px.bar(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل رضا الموظفين",
+                    color="الحالة",  # نلون بناءً على "الحالة"
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Bar Chart"
+                )
+                st.plotly_chart(fig)
+
+            if "📈 Line Chart" in chart_types:
+                st.write("### 📈 Line Chart")
+                fig = px.line(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل رضا الموظفين",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    markers=True,
+                    title="Line Chart"
+                )
+                st.plotly_chart(fig)
+
+            if "💥 Scatter Chart" in chart_types:
+                st.write("### 💥 Scatter Chart")
+                fig = px.scatter(
+                    df,
+                    x="التاريخ",  # استخدام "التاريخ" بدلاً من "من"
+                    y="معدل رضا الموظفين",
+                    color="الحالة",
+                    color_discrete_map={
+                        "معدل طبيعي": "blue",
+                        "تحت الطبيعي": "red"
+                    },
+                    hover_data=hover_data,
+                    title="Scatter Chart"
+                )
+                st.plotly_chart(fig)
+
+        else:
+            st.warning("❗ لا توجد بيانات في الفترة المحددة.")
+    else:
+        st.error(f"خطأ في الاتصال بالسيرفر: {response.status_code}")
+
+except Exception as e:
+    st.error(f"حدث خطأ أثناء جلب البيانات: {e}")
 
 
 st.divider()
@@ -797,10 +1176,10 @@ st.divider()
 # ──────────────────────────────
 # 🏢  Employee Performance Evaluation Percentage
 # ──────────────────────────────
-st.subheader("نسبة تقييم أداء الموظفين")
+st.subheader("💼📊نسبة تقييم أداء الموظفين")
 st.markdown(
     """
-ذا مؤشر السلوك الرئيسي (KBI) يقيس نسبة الموظفين الذين تم تقييم أدائهم خلال فترة معينة، ويتم حسابه عن طريق قسمة عدد الموظفين الذين تم تقييمهم على إجمالي عدد الموظفين في تلك الفترة. يساعد هذا المؤشر في تقييم مدى إجراء التقييمات للأداء وتغطيتها عبر القوى العاملة.
+هذا المؤشر (KBI) يقيس نسبة الموظفين الذين تم تقييم أدائهم خلال فترة معينة، ويتم حسابه عن طريق قسمة عدد الموظفين الذين تم تقييمهم على إجمالي عدد الموظفين في تلك الفترة. يساعد هذا المؤشر في تقييم مدى إجراء التقييمات للأداء وتغطيتها عبر القوى العاملة.
 """
 )
 
@@ -946,6 +1325,7 @@ with contact_cols[1]:
 
 
 
+
 # ──────────────────────────────
 # 📌 Footer (sticky)
 # ──────────────────────────────
@@ -960,7 +1340,7 @@ st.markdown(
             bottom: 0;
             left: 0;
             width: 100%;
-            background: #f2f3f8;
+            background: #fff;
             border-top: 1px solid #e0e0e0;
             text-align: center;
             padding: 0.4rem 0;
@@ -977,7 +1357,8 @@ st.markdown(
         .footer a:hover {{
             text-decoration: underline;
         }}
-
+        
+        
 
         .stApp {{padding-bottom: 40px;}}
     </style>
